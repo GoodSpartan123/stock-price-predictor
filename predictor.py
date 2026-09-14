@@ -68,9 +68,11 @@ model = LinearRegression()
 model.fit(X_train_scaled, y_train)
 
 # -----------------------
-# Evaluate on test set
+# Evaluate model
 # -----------------------
+y_pred_train = model.predict(X_train_scaled)
 y_pred_test = model.predict(X_test_scaled)
+
 mse = mean_squared_error(y_test, y_pred_test)
 mae = mean_absolute_error(y_test, y_pred_test)
 print(f"Test MSE: {mse:.4f}")
@@ -103,20 +105,36 @@ for d, p in zip(future_dates, future_preds):
     print(f"{d.date()}: {p:.2f}")
 
 # -----------------------
-# Plot results (train/test + future forecasts)
+# Residuals calculation
 # -----------------------
-plt.figure(figsize=(12, 6))
-# plot training data (true closes)
-plt.plot(dates_train, y_train, label="Train (actual)", linewidth=1)
-# plot test (true)
-plt.plot(dates_test, y_test, label="Test (actual)", linewidth=1)
-# plot model predictions on test set (align with dates_test)
-plt.plot(dates_test, y_pred_test, label="Test (predicted)", linestyle="--", linewidth=1)
-# plot future predictions (extend plot)
-plt.plot(future_dates, future_preds, label="Future predictions", marker="o", linestyle="-")
-plt.xlabel("Date")
-plt.ylabel("Close Price")
-plt.title("AAPL - Time-series prediction (lag features, time-based split)")
-plt.legend()
+train_residuals = y_train - y_pred_train
+test_residuals = y_test - y_pred_test
+
+# -----------------------
+# Plot results (2-panel layout)
+# -----------------------
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+# Top panel: Overlaid time-series comparison (Train & Test Actual vs. Predicted)
+ax1.plot(dates_train, y_train, label="Train (actual)", linewidth=1, color="blue", alpha=0.7)
+ax1.plot(dates_train, y_pred_train, label="Train (predicted)", linestyle="--", linewidth=1, color="cyan")
+ax1.plot(dates_test, y_test, label="Test (actual)", linewidth=1, color="green", alpha=0.7)
+ax1.plot(dates_test, y_pred_test, label="Test (predicted)", linestyle="--", linewidth=1, color="orange")
+ax1.plot(future_dates, future_preds, label="Future predictions", marker="o", linestyle="-", color="red")
+ax1.set_ylabel("Close Price")
+ax1.set_title("AAPL - Time-Series Actual vs. Predicted")
+ax1.legend()
+ax1.grid(True, linestyle="--", alpha=0.5)
+
+# Bottom panel: Residual prediction errors (y_actual - y_pred)
+ax2.plot(dates_train, train_residuals, label="Train Residuals", linewidth=1, color="purple", alpha=0.7)
+ax2.plot(dates_test, test_residuals, label="Test Residuals", linewidth=1, color="red", alpha=0.7)
+ax2.axhline(0, color="black", linestyle="--", linewidth=1)
+ax2.set_xlabel("Date")
+ax2.set_ylabel("Residual Error (Actual - Pred)")
+ax2.set_title("Model Residual Errors Over Time")
+ax2.legend()
+ax2.grid(True, linestyle="--", alpha=0.5)
+
 plt.tight_layout()
 plt.show()
